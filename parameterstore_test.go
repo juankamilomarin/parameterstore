@@ -45,7 +45,6 @@ type paramsGroup struct {
 
 type parameterStore struct{}
 
-//base is implied by the string's prefix: 2 for "0b", 8 for "0" or "0o", 16 for "0x"
 func (ps parameterStore) GetParams(m map[string]string) error {
 	p := map[string]string{
 		"int_param":                 "-2147483648",
