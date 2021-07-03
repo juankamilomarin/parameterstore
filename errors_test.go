@@ -6,11 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewErrTagNotSetOrEmpty(t *testing.T) {
-	e := newErrTagNotSetOrEmpty("testField")
-	assert.Equal(t, "tag not set or empty for field testField", e.Error())
-}
-
 func TestNewErrParsingParameter(t *testing.T) {
 	e := newErrParsingParameter("testField", "testTag", "testDesc")
 	assert.Equal(t, "cannot parse parameter testTag to field testField of type testDesc", e.Error())

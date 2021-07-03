@@ -8,57 +8,39 @@ import (
 )
 
 const tag = "psTag"
+const errorTag = "psErrorTag"
+const privateTag = "psPrivateTag"
+const intParsingErrorTag = "psIntParsingErrorTag"
+const uintParsingErrorTag = "psUintParsingErrorTag"
+const floatParsingErrorTag = "psFloatParsingErrorTag"
+const boolParsingErrorTag = "psBoolParsingErrorTag"
+const notSupportedTypeTag = "psNotSupportedTypeTag"
 
 type paramsGroup struct {
-	IntParam       int     `psTag:"int_param"`
-	IntParamBase2  int     `psTag:"int_param_base2"`
-	IntParamBase8  int     `psTag:"int_param_base8"`
-	IntParamBase16 int     `psTag:"int_param_base16"`
-	Int8Param      int8    `psTag:"int8_param"`
-	Int16Param     int16   `psTag:"int16_param"`
-	Int32Param     int32   `psTag:"int32_param"`
-	Int64Param     int64   `psTag:"int64_param"`
-	UintParam      uint    `psTag:"uint_param"`
-	Uint8Param     uint8   `psTag:"uint8_param"`
-	Uint16Param    uint16  `psTag:"uint16_param"`
-	Uint32Param    uint32  `psTag:"uint32_param"`
-	Uint64Param    uint64  `psTag:"uint64_param"`
-	Float32Param   float32 `psTag:"float32_param"`
-	Float64Param   float64 `psTag:"float64_param"`
-	StringParam    string  `psTag:"string_param"`
-	BoolParam      bool    `psTag:"bool_param"`
-}
-
-type paramsGroupWithError struct {
-	IntParam int `psTag:"error"`
-}
-
-type paramsGroupWithEmptyTag struct {
-	IntParam int `psTag:""`
-}
-
-type paramsGroupWithPrivateField struct {
-	intParam int `psTag:"int_param"`
-}
-
-type paramsGroupWithIntParsingError struct {
-	IntParam int `psTag:"int_param_parsing_error"`
-}
-
-type paramsGroupWithUintParsingError struct {
-	UintParam uint `psTag:"uint_param_parsing_error"`
-}
-
-type paramsGroupWithFloatParsingError struct {
-	FloatParam float32 `psTag:"float_param_parsing_error"`
-}
-
-type paramsGroupWithBoolParsingError struct {
-	BoolParam bool `psTag:"bool_param_parsing_error"`
-}
-
-type paramsGroupWithTypeNotSupported struct {
-	MapParam map[string]string `psTag:"type_not_supported"`
+	IntParam               int               `psTag:"int_param"`
+	IntParamBase2          int               `psTag:"int_param_base2"`
+	IntParamBase8          int               `psTag:"int_param_base8"`
+	IntParamBase16         int               `psTag:"int_param_base16"`
+	Int8Param              int8              `psTag:"int8_param"`
+	Int16Param             int16             `psTag:"int16_param"`
+	Int32Param             int32             `psTag:"int32_param"`
+	Int64Param             int64             `psTag:"int64_param"`
+	UintParam              uint              `psTag:"uint_param"`
+	Uint8Param             uint8             `psTag:"uint8_param"`
+	Uint16Param            uint16            `psTag:"uint16_param"`
+	Uint32Param            uint32            `psTag:"uint32_param"`
+	Uint64Param            uint64            `psTag:"uint64_param"`
+	Float32Param           float32           `psTag:"float32_param"`
+	Float64Param           float64           `psTag:"float64_param"`
+	StringParam            string            `psTag:"string_param"`
+	BoolParam              bool              `psTag:"bool_param"`
+	ErrorParam             int               `psErrorTag:"error"`
+	priveParam             int               `psPrivateTag:"private_param"`
+	IntParsingErrorParam   int               `psIntParsingErrorTag:"int_param_parsing_error"`
+	UintParsingErrorParam  uint              `psUintParsingErrorTag:"uint_param_parsing_error"`
+	FloatParsingErrorParam float32           `psFloatParsingErrorTag:"float_param_parsing_error"`
+	BoolParsingErrorParam  bool              `psBoolParsingErrorTag:"bool_param_parsing_error"`
+	MapParam               map[string]string `psNotSupportedTypeTag:"type_not_supported"`
 }
 
 type parameterStore struct{}
@@ -100,7 +82,7 @@ func (ps parameterStore) GetParams(m map[string]string) error {
 
 func TestParameterStore(t *testing.T) {
 	ps := parameterStore{}
-	pg := paramsGroup{}
+	pg := paramsGroup{priveParam: 0}
 	err := LoadParamsGroup(&pg, ps, tag)
 	assert.Nil(t, err)
 	assert.Equal(t, pg.IntParam, -2147483648)
@@ -132,43 +114,31 @@ func TestParameterStore(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, ErrParamsGroupInvalidType.Error(), err.Error())
 
-	pgEmptyTag := paramsGroupWithEmptyTag{}
-	err = LoadParamsGroup(&pgEmptyTag, ps, tag)
-	assert.Error(t, err)
-	assert.Equal(t, "tag not set or empty for field IntParam", err.Error())
-
-	pgError := paramsGroupWithError{}
-	err = LoadParamsGroup(&pgError, ps, tag)
+	err = LoadParamsGroup(&pg, ps, errorTag)
 	assert.Error(t, err)
 	assert.Equal(t, "error executing ParameterStore.GetParams: cannot get parameters", err.Error())
 
-	pgPrivateField := paramsGroupWithPrivateField{}
-	err = LoadParamsGroup(&pgPrivateField, ps, tag)
+	err = LoadParamsGroup(&pg, ps, privateTag)
 	assert.Error(t, err)
-	assert.Equal(t, "field intParam cannot be set", err.Error())
+	assert.Equal(t, "field priveParam cannot be set", err.Error())
 
-	pgIntParsingError := paramsGroupWithIntParsingError{}
-	err = LoadParamsGroup(&pgIntParsingError, ps, tag)
+	err = LoadParamsGroup(&pg, ps, intParsingErrorTag)
 	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter int_param_parsing_error to field IntParam of type int", err.Error())
+	assert.Equal(t, "cannot parse parameter int_param_parsing_error to field IntParsingErrorParam of type int", err.Error())
 
-	pgUintParsingError := paramsGroupWithUintParsingError{}
-	err = LoadParamsGroup(&pgUintParsingError, ps, tag)
+	err = LoadParamsGroup(&pg, ps, uintParsingErrorTag)
 	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter uint_param_parsing_error to field UintParam of type uint", err.Error())
+	assert.Equal(t, "cannot parse parameter uint_param_parsing_error to field UintParsingErrorParam of type uint", err.Error())
 
-	pgFloatParsingError := paramsGroupWithFloatParsingError{}
-	err = LoadParamsGroup(&pgFloatParsingError, ps, tag)
+	err = LoadParamsGroup(&pg, ps, floatParsingErrorTag)
 	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter float_param_parsing_error to field FloatParam of type float32", err.Error())
+	assert.Equal(t, "cannot parse parameter float_param_parsing_error to field FloatParsingErrorParam of type float32", err.Error())
 
-	pgBoolParsingError := paramsGroupWithBoolParsingError{}
-	err = LoadParamsGroup(&pgBoolParsingError, ps, tag)
+	err = LoadParamsGroup(&pg, ps, boolParsingErrorTag)
 	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter bool_param_parsing_error to field BoolParam of type bool", err.Error())
+	assert.Equal(t, "cannot parse parameter bool_param_parsing_error to field BoolParsingErrorParam of type bool", err.Error())
 
-	pgTypeNotSupported := paramsGroupWithTypeNotSupported{}
-	err = LoadParamsGroup(&pgTypeNotSupported, ps, tag)
+	err = LoadParamsGroup(&pg, ps, notSupportedTypeTag)
 	assert.Error(t, err)
 	assert.Equal(t, "type map for field MapParam not supported", err.Error())
 }

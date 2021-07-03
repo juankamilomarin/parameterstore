@@ -7,21 +7,6 @@ import (
 
 var ErrParamsGroupInvalidType = errors.New("params is not a pointer which value is a struct")
 
-type ErrTagNotSetOrEmpty struct {
-	// Satisfies the generic error interface.
-	error
-	fieldName string
-}
-
-// Satisfies the error interface.
-func (e ErrTagNotSetOrEmpty) Error() string {
-	return fmt.Sprintf(`tag not set or empty for field %s`, e.fieldName)
-}
-
-func newErrTagNotSetOrEmpty(fieldName string) *ErrTagNotSetOrEmpty {
-	return &ErrTagNotSetOrEmpty{fieldName: fieldName}
-}
-
 type ErrParsingParameter struct {
 	// Satisfies the generic error interface.
 	error

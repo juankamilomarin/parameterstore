@@ -15,6 +15,8 @@ type ParameterStore interface {
 // its matching parameter.
 // A parameter name is given by the value of the tag for each field in the
 // paramsGroup and its value is fetched from the parameterStore.
+// If the tag is not set on a given field in paramsGroup, the loading process
+// is ignored for that field.
 // LoadParamsGroup returns an error in each of these cases:
 //
 // * The paramsGroup argument is not a struct.
@@ -35,10 +37,7 @@ func LoadParamsGroup(paramsGroup interface{}, ps ParameterStore, tag string) err
 		return err
 	}
 	params := map[string]string{}
-	err = setParamNames(params, paramsGroup, tag)
-	if err != nil {
-		return err
-	}
+	setParamNames(params, paramsGroup, tag)
 	err = ps.GetParams(params)
 	if err != nil {
 		return newErrParameterStoreFailure(err)
@@ -67,20 +66,16 @@ func checkParamsGroupType(paramsGroup interface{}) error {
 
 // setParamNames sets the parameter name for each field in the paramsGroup struct
 // to a key in params. Parameter names are taken from the given field tag.
-// setParamNames returns an error in case one of the fields
-// does not have the parameter tag or it's value is empty.
-func setParamNames(params map[string]string, paramsGroup interface{}, tag string) error {
+func setParamNames(params map[string]string, paramsGroup interface{}, tag string) {
 	pGroupFields := reflect.ValueOf(paramsGroup).Elem()
 	pGroupType := pGroupFields.Type()
 	for i := 0; i < pGroupFields.NumField(); i++ {
 		field := pGroupType.Field(i)
 		paramName := field.Tag.Get(tag)
-		if paramName == "" {
-			return newErrTagNotSetOrEmpty(field.Name)
+		if paramName != "" {
+			params[paramName] = ""
 		}
-		params[paramName] = ""
 	}
-	return nil
 }
 
 // parseParams takes each element in params and parses its value
@@ -104,38 +99,40 @@ func parseParams(params map[string]string, paramsGroup interface{}, tag string) 
 		fieldName := field.Name
 		fieldKind := field.Type.Kind()
 		paramName := field.Tag.Get(tag)
-		if !fieldValue.CanSet() {
-			return newErrFieldCannotBeSet(fieldName)
-		}
-		switch fieldKind {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			parsedInt, err := strconv.ParseInt(params[paramName], 0, 0)
-			if err != nil {
-				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
+		if paramName != "" {
+			if !fieldValue.CanSet() {
+				return newErrFieldCannotBeSet(fieldName)
 			}
-			fieldValue.SetInt(parsedInt)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			parsedUInt, err := strconv.ParseUint(params[paramName], 0, 0)
-			if err != nil {
-				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
+			switch fieldKind {
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				parsedInt, err := strconv.ParseInt(params[paramName], 0, 0)
+				if err != nil {
+					return newErrParsingParameter(fieldName, paramName, fieldKind.String())
+				}
+				fieldValue.SetInt(parsedInt)
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				parsedUInt, err := strconv.ParseUint(params[paramName], 0, 0)
+				if err != nil {
+					return newErrParsingParameter(fieldName, paramName, fieldKind.String())
+				}
+				fieldValue.SetUint(parsedUInt)
+			case reflect.Float32, reflect.Float64:
+				parsedFloat, err := strconv.ParseFloat(params[paramName], 64)
+				if err != nil {
+					return newErrParsingParameter(fieldName, paramName, fieldKind.String())
+				}
+				fieldValue.SetFloat(parsedFloat)
+			case reflect.String:
+				fieldValue.SetString(params[paramName])
+			case reflect.Bool:
+				parsedBool, err := strconv.ParseBool(params[paramName])
+				if err != nil {
+					return newErrParsingParameter(fieldName, paramName, fieldKind.String())
+				}
+				fieldValue.SetBool(parsedBool)
+			default:
+				return newErrTypeNotSupported(fieldName, fieldKind.String())
 			}
-			fieldValue.SetUint(parsedUInt)
-		case reflect.Float32, reflect.Float64:
-			parsedFloat, err := strconv.ParseFloat(params[paramName], 64)
-			if err != nil {
-				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
-			}
-			fieldValue.SetFloat(parsedFloat)
-		case reflect.String:
-			fieldValue.SetString(params[paramName])
-		case reflect.Bool:
-			parsedBool, err := strconv.ParseBool(params[paramName])
-			if err != nil {
-				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
-			}
-			fieldValue.SetBool(parsedBool)
-		default:
-			return newErrTypeNotSupported(fieldName, fieldKind.String())
 		}
 	}
 	return nil
