@@ -32,7 +32,7 @@ type ErrParsingParameter struct {
 
 // Satisfies the error interface.
 func (e ErrParsingParameter) Error() string {
-	return fmt.Sprintf(`parsing parameter %s to field %s of type %s`, e.tagName, e.fieldName, e.typeDesc)
+	return fmt.Sprintf(`cannot parse parameter %s to field %s of type %s`, e.tagName, e.fieldName, e.typeDesc)
 }
 
 func newErrParsingParameter(fieldName string, tagName string, typeDesc string) *ErrParsingParameter {

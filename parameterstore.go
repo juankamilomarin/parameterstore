@@ -11,31 +11,24 @@ type ParameterStore interface {
 	GetParams(map[string]string) error
 }
 
-// LoadParamsGroup sets each field of the struct paramsGroup to the value of
-// the parameter. A parameter name is given by the value of the tag for each
-// field in the paramsGroup and its value is fetched from the parameterStore.
-// LoadParamsGroup returns an error in case there was one during the process.
+// LoadParamsGroup loads each field of the struct paramsGroup with the value of
+// its matching parameter.
+// A parameter name is given by the value of the tag for each field in the
+// paramsGroup and its value is fetched from the parameterStore.
+// LoadParamsGroup returns an error in each of these cases:
 //
-// Returned Error Types:
-//   * ErrParamsGroupInvalidType
-//   The params argument is not a struct.
+// * The paramsGroup argument is not a struct.
 //
-//   * ErrTagNotSetOrEmpty
-//   A field does not have the parameter tag or its value is empty.
+// * A field in paramsGroup cannot be set. This is checked using
+// CanSet function from reflection package.
 //
-//   * ErrParameterStoreFailure
-//   Parameter store failed when getting the parameters.
+// * A field type in paramsGroup is not supported.
 //
-//   * ErrParsingParameter
-//   Parsing error from parameter to its field.
+// * A field in paramsGroup does not have the parameter tag or its value is empty.
 //
-//   * ErrFieldCannotBeSet
-//   A field cannot be set. This is checked using CanSet function
-//   from reflection package.
+// * A parameter value cannot be parsed to is matching field value.
 //
-//	 * ErrTypeNotSupported
-//	 The of a given field is not supported
-//
+// * The parameter store failed when getting the parameters.
 func LoadParamsGroup(paramsGroup interface{}, ps ParameterStore, tag string) error {
 	err := checkParamsGroupType(paramsGroup)
 	if err != nil {
@@ -59,7 +52,7 @@ func LoadParamsGroup(paramsGroup interface{}, ps ParameterStore, tag string) err
 
 // checkParamsGroupType checks that the type of paramsGroup is a pointer and
 // its value type is a struct.
-// checkParamsGroupType returns ErrParamsGroupInvalidType in case paramsGroup type
+// checkParamsGroupType returns an error in case paramsGroup type
 // is not valid.
 func checkParamsGroupType(paramsGroup interface{}) error {
 	if reflect.TypeOf(paramsGroup).Kind() != reflect.Ptr {
@@ -74,7 +67,7 @@ func checkParamsGroupType(paramsGroup interface{}) error {
 
 // setParamNames sets the parameter name for each field in the paramsGroup struct
 // to a key in params. Parameter names are taken from the given field tag.
-// setParamNames returns ErrTagNotSetOrEmpty in case one of the fields
+// setParamNames returns an error in case one of the fields
 // does not have the parameter tag or it's value is empty.
 func setParamNames(params map[string]string, paramsGroup interface{}, tag string) error {
 	pGroupFields := reflect.ValueOf(paramsGroup).Elem()
@@ -93,56 +86,56 @@ func setParamNames(params map[string]string, paramsGroup interface{}, tag string
 // parseParams takes each element in params and parses its value
 // to the type of the corresponding field in paramsGroup, using
 // the key on params and the tag in the paramsGroup field to
-// match such correspondence.
+// match such correspondence. ParseParams returns errors in
+// each of these cases:
 //
-// Returned Error Types:
-//   * ErrParsingParameter
-//   There was an error parsing the parameter to its field.
+// * The parameter value cannot be parsed to the field value.
 //
-//   * ErrFieldCannotBeSet
-//   A field cannot be set. This is checked using CanSet function
-//   from reflection package.
+// * A field cannot be set. This is checked using CanSet function
+// from reflection package.
 //
-//	 * ErrTypeNotSupported
-//	 The of a given field is not supported
+// * A field type is not supported
 func parseParams(params map[string]string, paramsGroup interface{}, tag string) error {
 	pGroupFields := reflect.ValueOf(paramsGroup).Elem()
 	pGroupType := pGroupFields.Type()
 	for i := 0; i < pGroupFields.NumField(); i++ {
-		fieldType := pGroupType.Field(i).Type
-		paramName := pGroupType.Field(i).Tag.Get(tag)
-		if !pGroupFields.Field(i).CanSet() {
-			return newErrFieldCannotBeSet(fieldType.Name())
+		field := pGroupType.Field(i)
+		fieldValue := pGroupFields.Field(i)
+		fieldName := field.Name
+		fieldKind := field.Type.Kind()
+		paramName := field.Tag.Get(tag)
+		if !fieldValue.CanSet() {
+			return newErrFieldCannotBeSet(fieldName)
 		}
-		switch k := fieldType.Kind(); k {
+		switch fieldKind {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			parsedInt, err := strconv.ParseInt(params[paramName], 0, 0)
 			if err != nil {
-				return newErrParsingParameter(fieldType.Name(), paramName, k.String())
+				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
 			}
-			pGroupFields.Field(i).SetInt(parsedInt)
+			fieldValue.SetInt(parsedInt)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			parsedUInt, err := strconv.ParseUint(params[paramName], 0, 0)
 			if err != nil {
-				return newErrParsingParameter(fieldType.Name(), paramName, fieldType.Kind().String())
+				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
 			}
-			pGroupFields.Field(i).SetUint(parsedUInt)
+			fieldValue.SetUint(parsedUInt)
 		case reflect.Float32, reflect.Float64:
 			parsedFloat, err := strconv.ParseFloat(params[paramName], 64)
 			if err != nil {
-				return newErrParsingParameter(fieldType.Name(), paramName, fieldType.Kind().String())
+				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
 			}
-			pGroupFields.Field(i).SetFloat(parsedFloat)
+			fieldValue.SetFloat(parsedFloat)
 		case reflect.String:
-			pGroupFields.Field(i).SetString(params[paramName])
+			fieldValue.SetString(params[paramName])
 		case reflect.Bool:
 			parsedBool, err := strconv.ParseBool(params[paramName])
 			if err != nil {
-				return newErrParsingParameter(fieldType.Name(), paramName, fieldType.Kind().String())
+				return newErrParsingParameter(fieldName, paramName, fieldKind.String())
 			}
-			pGroupFields.Field(i).SetBool(parsedBool)
+			fieldValue.SetBool(parsedBool)
 		default:
-			return newErrTypeNotSupported(fieldType.Name(), fieldType.Kind().String())
+			return newErrTypeNotSupported(fieldName, fieldKind.String())
 		}
 	}
 	return nil

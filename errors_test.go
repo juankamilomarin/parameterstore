@@ -13,7 +13,7 @@ func TestNewErrTagNotSetOrEmpty(t *testing.T) {
 
 func TestNewErrParsingParameter(t *testing.T) {
 	e := newErrParsingParameter("testField", "testTag", "testDesc")
-	assert.Equal(t, "parsing parameter testTag to field testField of type testDesc", e.Error())
+	assert.Equal(t, "cannot parse parameter testTag to field testField of type testDesc", e.Error())
 }
 
 func TestNewErrTypeNotSupported(t *testing.T) {
