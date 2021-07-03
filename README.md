@@ -62,6 +62,6 @@ func (ps MapParameterStore) GetParams(paramMap map[string]string) error {
 
 # More examples
 
-* [Read parameters from AWS SSM Parameter Store](https://github.com/juankamilomarin/parameterstore/tree/main/examples/aws)
-* [Read parameters from environment variables](https://github.com/juankamilomarin/parameterstore/tree/main/examples/envvar)
-* [Read parameters from in memory map](https://github.com/juankamilomarin/parameterstore/tree/main/examples/map)
+* [Read parameters from AWS SSM Parameter Store](https://github.com/juankamilomarin/parameterstore-examples/tree/main/aws)
+* [Read parameters from environment variables](https://github.com/juankamilomarin/parameterstore-examples/tree/main/envvar)
+* [Read parameters from in memory map](https://github.com/juankamilomarin/parameterstore-examples/tree/main/map)
