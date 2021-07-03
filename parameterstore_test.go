@@ -83,61 +83,71 @@ func TestParameterStore(t *testing.T) {
 	ps := parameterStore{}
 	pg := paramsGroup{priveParam: 0}
 	err := LoadParamsGroup(&pg, ps, tag)
-	assert.Nil(t, err)
-	assert.Equal(t, pg.IntParam, -2147483648)
-	assert.Equal(t, pg.IntParamBase2, -0b10000000000000000000000000000000)
-	assert.Equal(t, pg.IntParamBase8, -0o20000000000)
-	assert.Equal(t, pg.IntParamBase16, -0x80000000)
-	assert.Equal(t, pg.Int8Param, int8(-127))
-	assert.Equal(t, pg.Int16Param, int16(-32768))
-	assert.Equal(t, pg.Int32Param, int32(-2147483648))
-	assert.Equal(t, pg.Int64Param, int64(-9223372036854775808))
-	assert.Equal(t, pg.UintParam, uint(18446744073709551615))
-	assert.Equal(t, pg.Uint8Param, uint8(255))
-	assert.Equal(t, pg.Uint16Param, uint16(65535))
-	assert.Equal(t, pg.Uint32Param, uint32(4294967295))
-	assert.Equal(t, pg.Uint64Param, uint64(18446744073709551615))
-	assert.Equal(t, pg.Float32Param, float32(0.123456789121212))
-	assert.Equal(t, pg.Float64Param, float64(0.123456789121212121212))
-	assert.Equal(t, pg.StringParam, "hello world!")
-	assert.Equal(t, pg.BoolParam, true)
+	if assert.Nil(t, err) {
+		assert.Equal(t, pg.IntParam, -2147483648)
+		assert.Equal(t, pg.IntParamBase2, -0b10000000000000000000000000000000)
+		assert.Equal(t, pg.IntParamBase8, -0o20000000000)
+		assert.Equal(t, pg.IntParamBase16, -0x80000000)
+		assert.Equal(t, pg.Int8Param, int8(-127))
+		assert.Equal(t, pg.Int16Param, int16(-32768))
+		assert.Equal(t, pg.Int32Param, int32(-2147483648))
+		assert.Equal(t, pg.Int64Param, int64(-9223372036854775808))
+		assert.Equal(t, pg.UintParam, uint(18446744073709551615))
+		assert.Equal(t, pg.Uint8Param, uint8(255))
+		assert.Equal(t, pg.Uint16Param, uint16(65535))
+		assert.Equal(t, pg.Uint32Param, uint32(4294967295))
+		assert.Equal(t, pg.Uint64Param, uint64(18446744073709551615))
+		assert.Equal(t, pg.Float32Param, float32(0.123456789121212))
+		assert.Equal(t, pg.Float64Param, float64(0.123456789121212121212))
+		assert.Equal(t, pg.StringParam, "hello world!")
+		assert.Equal(t, pg.BoolParam, true)
+	}
 
 	var strPointer *string
 	str := "hello world!"
 	strPointer = &str
 	err = LoadParamsGroup(strPointer, ps, tag)
-	assert.Error(t, err)
-	assert.Equal(t, ErrParamsGroupInvalidType.Error(), err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, ErrParamsGroupInvalidType.Error(), err.Error())
+	}
 
 	err = LoadParamsGroup(*strPointer, ps, tag)
-	assert.Error(t, err)
-	assert.Equal(t, ErrParamsGroupInvalidType.Error(), err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, ErrParamsGroupInvalidType.Error(), err.Error())
+	}
 
 	err = LoadParamsGroup(&pg, ps, errorTag)
-	assert.Error(t, err)
-	assert.Equal(t, "error executing ParameterStore.GetParams: cannot get parameters", err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, "error executing ParameterStore.GetParams: cannot get parameters", err.Error())
+	}
 
 	err = LoadParamsGroup(&pg, ps, privateTag)
-	assert.Error(t, err)
-	assert.Equal(t, "field priveParam cannot be set", err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, "field priveParam cannot be set", err.Error())
+	}
 
 	err = LoadParamsGroup(&pg, ps, intParsingErrorTag)
-	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter int_param_parsing_error to field IntParsingErrorParam of type int", err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, "cannot parse parameter int_param_parsing_error to field IntParsingErrorParam of type int", err.Error())
+	}
 
 	err = LoadParamsGroup(&pg, ps, uintParsingErrorTag)
-	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter uint_param_parsing_error to field UintParsingErrorParam of type uint", err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, "cannot parse parameter uint_param_parsing_error to field UintParsingErrorParam of type uint", err.Error())
+	}
 
 	err = LoadParamsGroup(&pg, ps, floatParsingErrorTag)
-	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter float_param_parsing_error to field FloatParsingErrorParam of type float32", err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, "cannot parse parameter float_param_parsing_error to field FloatParsingErrorParam of type float32", err.Error())
+	}
 
 	err = LoadParamsGroup(&pg, ps, boolParsingErrorTag)
-	assert.Error(t, err)
-	assert.Equal(t, "cannot parse parameter bool_param_parsing_error to field BoolParsingErrorParam of type bool", err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, "cannot parse parameter bool_param_parsing_error to field BoolParsingErrorParam of type bool", err.Error())
+	}
 
 	err = LoadParamsGroup(&pg, ps, notSupportedTypeTag)
-	assert.Error(t, err)
-	assert.Equal(t, "type map for field MapParam not supported", err.Error())
+	if assert.Error(t, err) {
+		assert.Equal(t, "type map for field MapParam not supported", err.Error())
+	}
 }
