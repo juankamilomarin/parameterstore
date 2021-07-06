@@ -45,7 +45,7 @@ type paramsGroup struct {
 
 type parameterStore struct{}
 
-func (ps parameterStore) GetParams(m map[string]string) error {
+func (ps parameterStore) GetParams(paramNames []string) (map[string]string, error) {
 	p := map[string]string{
 		"int_param":                 "-2147483648",
 		"int_param_base2":           "-0b10000000000000000000000000000000",
@@ -69,14 +69,14 @@ func (ps parameterStore) GetParams(m map[string]string) error {
 		"float_param_parsing_error": "error",
 		"bool_param_parsing_error":  "error",
 	}
-
-	for key := range m {
+	params := map[string]string{}
+	for _, key := range paramNames {
 		if key == "error" {
-			return errors.New("cannot get parameters")
+			return map[string]string{}, errors.New("cannot get parameters")
 		}
-		m[key] = p[key]
+		params[key] = p[key]
 	}
-	return nil
+	return params, nil
 }
 
 func TestParameterStore(t *testing.T) {

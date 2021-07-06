@@ -8,13 +8,15 @@ import (
 // The ParameterStore is the interface for
 // representing a parameter store.
 type ParameterStore interface {
-	GetParams(map[string]string) error
+	// Receives a slice of parameter names to lookup and returns a key-value map
+	// of those parameters
+	GetParams([]string) (map[string]string, error)
 }
 
 // LoadParamsGroup loads each field of the struct paramsGroup with the value of
 // its matching parameter.
 // A parameter name is given by the value of the tag for each field in the
-// paramsGroup and its value is fetched from the parameterStore.
+// paramsGroup struct and its value is fetched from the parameterStore.
 // If the tag is not set on a given field in paramsGroup, the loading process
 // is ignored for that field.
 // LoadParamsGroup returns an error in each of these cases:
@@ -36,9 +38,8 @@ func LoadParamsGroup(paramsGroup interface{}, ps ParameterStore, tag string) err
 	if err != nil {
 		return err
 	}
-	params := map[string]string{}
-	setParamNames(params, paramsGroup, tag)
-	err = ps.GetParams(params)
+	paramNames := getParamNames(paramsGroup, tag)
+	params, err := ps.GetParams(paramNames)
 	if err != nil {
 		return newErrParameterStoreFailure(err)
 	}
@@ -64,18 +65,20 @@ func checkParamsGroupType(paramsGroup interface{}) error {
 	return nil
 }
 
-// setParamNames sets the parameter name for each field in the paramsGroup struct
-// to a key in params. Parameter names are taken from the given field tag.
-func setParamNames(params map[string]string, paramsGroup interface{}, tag string) {
+// getParamNames takes the tag from each field in the paramsGroup struct and adds
+// the value of that key to a slice of keys which is returned.
+func getParamNames(paramsGroup interface{}, tag string) []string {
+	params := []string{}
 	pGroupFields := reflect.ValueOf(paramsGroup).Elem()
 	pGroupType := pGroupFields.Type()
 	for i := 0; i < pGroupFields.NumField(); i++ {
 		field := pGroupType.Field(i)
 		paramName := field.Tag.Get(tag)
 		if paramName != "" {
-			params[paramName] = ""
+			params = append(params, paramName)
 		}
 	}
+	return params
 }
 
 // parseParams takes each element in params and parses its value

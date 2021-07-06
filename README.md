@@ -3,7 +3,15 @@ A package that loads parameters dynamically from a parameter store into a struct
 
 ## How to use
 
-You just have to implement the ``GetParams`` method from the ``ParameterStore`` interface and specify the tag which provides the parameter name for each field
+You just have to implement the ``GetParams`` function from the ``ParameterStore`` interface.
+This function receives a list of parameter names (or keys) and returns a map which is a key-value
+pair in which each key is the parameter name and the value is the parameter value.
+In order to get the names for each parameter you have to set a tag for each field in your struct.
+
+A pointer to your struct, your implementation of the parameter store and the tag name are
+provided to the LoadParamsGroup function.
+
+and specify the tag which provides the parameter name for each field
 
 ## Example
 
