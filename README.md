@@ -11,8 +11,6 @@ In order to get the names for each parameter you have to set a tag for each fiel
 A pointer to your struct, your implementation of the parameter store and the tag name are
 provided to the LoadParamsGroup function.
 
-and specify the tag which provides the parameter name for each field
-
 ## Example
 
 ```go
